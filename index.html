@@ -6,7 +6,6 @@
     <title>GUDANG DODOH JAYA TEKNIK</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Library PapaParse untuk Import CSV Google Sheets -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased min-h-screen">
@@ -95,7 +94,6 @@
                 </div>
             </div>
 
-            <!-- Table Container -->
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm text-slate-600">
                     <thead class="bg-slate-50 text-slate-700 uppercase font-semibold text-xs border-b border-slate-200">
@@ -212,13 +210,15 @@
         </div>
     </div>
 
-    <!-- Firebase Realtime Database Integration Script -->
+    <!-- KONEKSI FIREBASE REALTIME DATABASE -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, onValue, push, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
+        // CONFIG FIREBASE
         const firebaseConfig = {
-            databaseURL: "https://warehous-27ece-default-rtdb.firebaseio.com/"
+            databaseURL: "https://warehous-27ece-default-rtdb.firebaseio.com/",
+            projectId: "warehous-27ece"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -231,7 +231,7 @@
 
         lucide.createIcons();
 
-        // Status Koneksi
+        // Status Koneksi Realtime
         onValue(ref(db, ".info/connected"), (snap) => {
             const statusEl = document.getElementById("connectionStatus");
             if (snap.val() === true) {
