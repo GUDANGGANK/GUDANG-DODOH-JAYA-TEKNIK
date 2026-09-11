@@ -23,9 +23,9 @@
                     </div>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <div id="connectionStatus" class="flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
-                        <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-                        <span>Menghubungkan...</span>
+                    <div id="connectionStatus" class="flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        <span>Sistem Siap (Lokal)</span>
                     </div>
                 </div>
             </div>
@@ -102,6 +102,7 @@
                             <th class="px-6 py-4">Nama Barang</th>
                             <th class="px-6 py-4">Kategori</th>
                             <th class="px-6 py-4 text-center">Jumlah Stok</th>
+                            <th class="px-6 py-4 text-center">Satuan</th>
                             <th class="px-6 py-4 text-center">Status</th>
                             <th class="px-6 py-4 text-right">Keluar Barang</th>
                             <th class="px-6 py-4 text-right">Aksi</th>
@@ -137,6 +138,7 @@
                             <th class="px-6 py-4">SKU</th>
                             <th class="px-6 py-4">Nama Barang</th>
                             <th class="px-6 py-4 text-center">Jumlah Out</th>
+                            <th class="px-6 py-4 text-center">Satuan</th>
                             <th class="px-6 py-4">Keterangan / Alasan</th>
                         </tr>
                     </thead>
@@ -169,9 +171,24 @@
                     <label class="block text-sm font-medium text-slate-700 mb-1">Kategori</label>
                     <input type="text" id="inputCategory" required placeholder="Contoh: Sparepart" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Jumlah Stok Awal</label>
-                    <input type="number" id="inputStock" min="0" required placeholder="0" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Jumlah Stok Awal</label>
+                        <input type="number" id="inputStock" min="0" required placeholder="0" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Satuan</label>
+                        <select id="inputUnit" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm bg-white">
+                            <option value="PCS">PCS</option>
+                            <option value="KILOGRAM">KILOGRAM</option>
+                            <option value="PACK">PACK</option>
+                            <option value="SET">SET</option>
+                            <option value="LITER">LITER</option>
+                            <option value="METER">METER</option>
+                            <option value="DUSS">DUSS</option>
+                            <option value="ROLL">ROLL</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="pt-4 flex justify-end space-x-3">
                     <button type="button" id="cancelAddBtn" class="px-4 py-2 border border-slate-300 rounded-lg text-sm text-slate-600 hover:bg-slate-50 font-medium">Batal</button>
@@ -194,9 +211,15 @@
                     <label class="block text-sm font-medium text-slate-700 mb-1">Nama Barang</label>
                     <input type="text" id="outItemName" readonly class="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-lg text-sm font-semibold text-slate-700 cursor-not-allowed">
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Jumlah Keluar</label>
-                    <input type="number" id="outQuantity" min="1" required placeholder="1" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:outline-none text-sm">
+                <div class="grid grid-cols-3 gap-2 items-center">
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Jumlah Keluar</label>
+                        <input type="number" id="outQuantity" min="1" required placeholder="1" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:outline-none text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Satuan</label>
+                        <input type="text" id="outUnit" readonly class="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-lg text-sm font-medium text-slate-600 text-center cursor-not-allowed">
+                    </div>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">Keterangan / Alasan</label>
@@ -210,58 +233,23 @@
         </div>
     </div>
 
-    <!-- KONEKSI FIREBASE REALTIME DATABASE -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, onValue, push, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-
-        // CONFIG FIREBASE
-        const firebaseConfig = {
-  apiKey: "AIzaSyBCWvkJdfFAdrdpxnrtzSEBBzlOsw_-fXg",
-  authDomain: "warehous-27ece.firebaseapp.com",
-  databaseURL: "https://warehous-27ece-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "warehous-27ece",
-  storageBucket: "warehous-27ece.firebasestorage.app",
-  messagingSenderId: "45154175764",
-  appId: "1:45154175764:web:45e7ec8c1989b58bd09001",
-  measurementId: "G-TL5YH6PM87"
-};
-
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-        const itemsRef = ref(db, 'inventory');
-        const logsRef = ref(db, 'out_logs');
-
-        let itemsData = {};
-        let logsData = {};
+    <!-- LOGIKA LOCALSTORAGE TERINTEGRASI SATUAN -->
+    <script>
+        let itemsData = JSON.parse(localStorage.getItem("gudang_items")) || {};
+        let logsData = JSON.parse(localStorage.getItem("gudang_logs")) || {};
 
         lucide.createIcons();
+        renderTable();
+        renderLogsTable();
+        updateStats();
 
-        // Status Koneksi Realtime
-        onValue(ref(db, ".info/connected"), (snap) => {
-            const statusEl = document.getElementById("connectionStatus");
-            if (snap.val() === true) {
-                statusEl.className = "flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200";
-                statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span><span>Terkoneksi Realtime</span>`;
-            } else {
-                statusEl.className = "flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200";
-                statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span><span>Menghubungkan...</span>`;
-            }
-        });
-
-        // Listener Data Utama
-        onValue(itemsRef, (snapshot) => {
-            itemsData = snapshot.val() || {};
+        function saveData() {
+            localStorage.setItem("gudang_items", JSON.stringify(itemsData));
+            localStorage.setItem("gudang_logs", JSON.stringify(logsData));
             renderTable();
-            updateStats();
-        });
-
-        // Listener Log Barang Keluar
-        onValue(logsRef, (snapshot) => {
-            logsData = snapshot.val() || {};
             renderLogsTable();
             updateStats();
-        });
+        }
 
         function renderTable() {
             const tbody = document.getElementById("inventoryTableBody");
@@ -274,6 +262,7 @@
 
             keys.forEach(key => {
                 const item = itemsData[key];
+                const unit = item.unit || "PCS";
                 if (searchFilter && !(
                     item.sku.toLowerCase().includes(searchFilter) ||
                     item.name.toLowerCase().includes(searchFilter) ||
@@ -290,6 +279,7 @@
                     <td class="px-6 py-4 font-semibold text-slate-900">${escapeHtml(item.name)}</td>
                     <td class="px-6 py-4"><span class="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-md text-xs font-medium">${escapeHtml(item.category)}</span></td>
                     <td class="px-6 py-4 text-center font-bold ${isLow ? 'text-amber-600' : 'text-slate-800'} text-base">${item.stock}</td>
+                    <td class="px-6 py-4 text-center font-semibold text-slate-500 text-xs">${escapeHtml(unit)}</td>
                     <td class="px-6 py-4 text-center">
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${isLow ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">
                             ${isLow ? 'Stok Menipis' : 'Aman'}
@@ -332,6 +322,7 @@
             logKeys.forEach(key => {
                 const log = logsData[key];
                 const dateStr = new Date(log.timestamp).toLocaleString("id-ID");
+                const unit = log.unit || "PCS";
                 const tr = document.createElement("tr");
                 tr.className = "hover:bg-slate-50 transition-colors";
                 tr.innerHTML = `
@@ -339,6 +330,7 @@
                     <td class="px-6 py-3.5 font-mono text-xs font-medium text-slate-700">${escapeHtml(log.sku)}</td>
                     <td class="px-6 py-3.5 font-semibold text-slate-800">${escapeHtml(log.name)}</td>
                     <td class="px-6 py-3.5 text-center font-bold text-rose-600">-${log.qty}</td>
+                    <td class="px-6 py-3.5 text-center font-semibold text-slate-500 text-xs">${escapeHtml(unit)}</td>
                     <td class="px-6 py-3.5 text-slate-600">${escapeHtml(log.reason)}</td>
                 `;
                 tbody.appendChild(tr);
@@ -372,11 +364,13 @@
                 const item = itemsData[id];
                 document.getElementById("outItemId").value = id;
                 document.getElementById("outItemName").value = `${item.name} (Stok: ${item.stock})`;
+                document.getElementById("outUnit").value = item.unit || "PCS";
                 document.getElementById("outQuantity").max = item.stock;
                 document.getElementById("outModal").classList.remove("hidden");
             } else if (action === "delete") {
                 if (confirm("Yakin ingin menghapus barang ini?")) {
-                    remove(ref(db, `inventory/${id}`));
+                    delete itemsData[id];
+                    saveData();
                 }
             }
         });
@@ -393,18 +387,20 @@
                 return;
             }
 
-            const newStock = item.stock - qtyOut;
-            update(ref(db, `inventory/${id}`), { stock: newStock });
-
-            push(logsRef, {
+            itemsData[id].stock -= qtyOut;
+            
+            const logId = "log_" + Date.now();
+            logsData[logId] = {
                 itemId: id,
                 sku: item.sku,
                 name: item.name,
                 qty: qtyOut,
+                unit: item.unit || "PCS",
                 reason: reason,
                 timestamp: Date.now()
-            });
+            };
 
+            saveData();
             document.getElementById("outModal").classList.add("hidden");
             document.getElementById("itemOutForm").reset();
         });
@@ -419,17 +415,18 @@
 
         document.getElementById("addItemForm").addEventListener("submit", (e) => {
             e.preventDefault();
-            const newItem = {
+            const id = "item_" + Date.now();
+            itemsData[id] = {
                 sku: document.getElementById("inputSKU").value.trim(),
                 name: document.getElementById("inputName").value.trim(),
                 category: document.getElementById("inputCategory").value.trim(),
                 stock: parseInt(document.getElementById("inputStock").value, 10) || 0,
+                unit: document.getElementById("inputUnit").value,
                 updatedAt: Date.now()
             };
-            push(itemsRef, newItem).then(() => {
-                addModal.classList.add("hidden");
-                document.getElementById("addItemForm").reset();
-            });
+            saveData();
+            addModal.classList.add("hidden");
+            document.getElementById("addItemForm").reset();
         });
 
         document.getElementById("csvFileInput").addEventListener("change", (e) => {
@@ -446,18 +443,22 @@
                         const name = row.Nama || row.name || row["Nama Barang"];
                         const category = row.Kategori || row.category || "Umum";
                         const stock = parseInt(row.Stok || row.stock || row.Jumlah, 10) || 0;
+                        const unit = (row.Satuan || row.satuan || row.Unit || "PCS").toString().toUpperCase().trim();
 
                         if (sku && name) {
-                            push(itemsRef, {
+                            const id = "item_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4);
+                            itemsData[id] = {
                                 sku: sku.toString().trim(),
                                 name: name.toString().trim(),
                                 category: category.toString().trim(),
                                 stock: stock,
+                                unit: unit,
                                 updatedAt: Date.now()
-                            });
+                            };
                             count++;
                         }
                     });
+                    saveData();
                     alert(`Berhasil mengimpor ${count} data barang!`);
                     document.getElementById("csvFileInput").value = "";
                 }
