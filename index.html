@@ -3,395 +3,482 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GUDANG DODOH JAYA TEKNIK - Cloud Sync</title>
-    <!-- Tailwind CSS CDN -->
+    <title>Sistem Manajemen Stok & Barang Keluar</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-    </style>
+    <!-- Library PapaParse untuk Import CSV Google Sheets -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 </head>
-<body class="bg-slate-100 min-h-screen text-slate-800 pb-12">
-
-    <!-- HEADER / NAVBAR -->
-    <header class="bg-slate-900 text-white shadow-lg sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-            <div class="flex items-center gap-3">
-                <div class="bg-amber-500 p-2.5 rounded-xl text-slate-900 font-bold">
-                    <i data-lucide="boxes" class="w-7 h-7"></i>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen">
+    <!-- Header / Navigasi -->
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center space-x-3">
+                    <div class="p-2 bg-indigo-600 text-white rounded-lg">
+                        <i data-lucide="box" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-bold text-slate-900 leading-tight">StockMaster Realtime</h1>
+                        <p class="text-xs text-slate-500">Manajemen Stok & Barang Keluar</p>
+                    </div>
                 </div>
-                <div>
-                    <h1 class="text-xl sm:text-2xl font-black tracking-wider text-amber-400">GUDANG DODOH JAYA TEKNIK</h1>
-                    <p class="text-xs text-slate-400">Sistem Stok Terintegrasi Cloud Realtime</p>
-                </div>
-            </div>
-            <div class="flex items-center gap-3">
-                <!-- Status Koneksi Cloud -->
-                <div id="sync-status" class="text-xs bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 text-amber-400 flex items-center gap-2">
-                    <i data-lucide="cloud-off" class="w-4 h-4"></i>
-                    <span>Menghubungkan...</span>
-                </div>
-                <div class="text-xs bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 text-slate-300 flex items-center gap-2 hidden sm:flex">
-                    <i data-lucide="clock" class="w-4 h-4 text-amber-400"></i>
-                    <span id="current-time">--:--:--</span>
+                <div class="flex items-center space-x-4">
+                    <div id="connectionStatus" class="flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                        <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                        <span>Menghubungkan...</span>
+                    </div>
                 </div>
             </div>
         </div>
-    </header>
+    </nav>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-
-        <!-- DASHBOARD RINGKASAN -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 flex items-center justify-between">
-                <div>
-                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Jenis Barang</p>
-                    <h3 id="stat-total-items" class="text-2xl font-bold text-slate-800 mt-1">0</h3>
-                </div>
-                <div class="bg-blue-50 text-blue-600 p-3 rounded-xl">
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        <!-- Dashboard Summary Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-4">
+                <div class="p-3 bg-blue-50 text-blue-600 rounded-lg">
                     <i data-lucide="package" class="w-6 h-6"></i>
                 </div>
-            </div>
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 flex items-center justify-between">
                 <div>
-                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Volume Stok</p>
-                    <h3 id="stat-total-stock" class="text-2xl font-bold text-emerald-600 mt-1">0</h3>
-                </div>
-                <div class="bg-emerald-50 text-emerald-600 p-3 rounded-xl">
-                    <i data-lucide="arrow-down-left" class="w-6 h-6"></i>
+                    <p class="text-sm font-medium text-slate-500">Total Jenis Barang</p>
+                    <h3 id="statTotalItems" class="text-2xl font-bold text-slate-900">0</h3>
                 </div>
             </div>
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 flex items-center justify-between">
-                <div>
-                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Stok Menipis (≤5)</p>
-                    <h3 id="stat-low-stock" class="text-2xl font-bold text-amber-600 mt-1">0</h3>
-                </div>
-                <div class="bg-amber-50 text-amber-600 p-3 rounded-xl">
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-4">
+                <div class="p-3 bg-amber-50 text-amber-600 rounded-lg">
                     <i data-lucide="alert-triangle" class="w-6 h-6"></i>
                 </div>
-            </div>
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 flex items-center justify-between">
                 <div>
-                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Transaksi</p>
-                    <h3 id="stat-transactions" class="text-2xl font-bold text-purple-600 mt-1">0</h3>
+                    <p class="text-sm font-medium text-slate-500">Stok Menipis (&lt; 5)</p>
+                    <h3 id="statLowStock" class="text-2xl font-bold text-amber-600">0</h3>
                 </div>
-                <div class="bg-purple-50 text-purple-600 p-3 rounded-xl">
-                    <i data-lucide="history" class="w-6 h-6"></i>
+            </div>
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-4">
+                <div class="p-3 bg-rose-50 text-rose-600 rounded-lg">
+                    <i data-lucide="arrow-up-right" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-slate-500">Total Barang Keluar</p>
+                    <h3 id="statTotalOutQty" class="text-2xl font-bold text-rose-600">0</h3>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-4">
+                <div class="p-3 bg-emerald-50 text-emerald-600 rounded-lg">
+                    <i data-lucide="activity" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-slate-500">Total Transaksi Out</p>
+                    <h3 id="statTotalTransactions" class="text-2xl font-bold text-slate-900">0</h3>
                 </div>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
-            <!-- FORM TAMBAH BARANG BARU -->
-            <div class="lg:col-span-1">
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80 sticky top-24">
-                    <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                        <i data-lucide="plus-circle" class="w-5 h-5 text-amber-500"></i>
-                        Tambah Barang Baru
-                    </h2>
-                    
-                    <form id="add-item-form" class="space-y-4">
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Kode / SKU Barang</label>
-                            <input type="text" id="item-code" placeholder="Contoh: DJT-001" required
-                                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm">
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Nama Barang</label>
-                            <input type="text" id="item-name" placeholder="Contoh: Kabel Tembaga NYA" required
-                                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm">
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Kategori</label>
-                            <input type="text" id="item-category" placeholder="Contoh: Kelistrikan, Pertukangan" required
-                                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm">
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Jumlah Awal</label>
-                                <input type="number" id="item-qty" min="0" value="0" required
-                                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Satuan</label>
-                                <select id="item-unit" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm bg-white">
-                                    <option value="pcs">pcs</option>
-                                    <option value="kilogram">kilogram</option>
-                                    <option value="liter">liter</option>
-                                    <option value="roll">roll</option>
-                                    <option value="meter">meter</option>
-                                    <option value="dus">dus</option>
-                                    <option value="set">set</option>
-                                    <option value="pack">pack</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <button type="submit" 
-                            class="w-full mt-2 bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold py-3 px-4 rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
-                            <i data-lucide="cloud-upload" class="w-4 h-4"></i>
-                            Simpan ke Cloud Database
-                        </button>
-                    </form>
+        <!-- Section 1: Tabel Data Stok Utama -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="p-6 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="relative flex-1 max-w-md">
+                    <i data-lucide="search" class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <input type="text" id="searchInput" placeholder="Cari barang, SKU, atau kategori..." class="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <label class="inline-flex items-center justify-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer">
+                        <i data-lucide="file-spreadsheets" class="w-4 h-4"></i>
+                        <span>Import CSV Sheets</span>
+                        <input type="file" id="csvFileInput" accept=".csv" class="hidden">
+                    </label>
+                    <button id="openAddModalBtn" class="inline-flex items-center justify-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                        <span>Tambah Barang Baru</span>
+                    </button>
                 </div>
             </div>
 
-            <!-- TABEL STOK & PENCARIAN -->
-            <div class="lg:col-span-2">
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
-                    
-                    <!-- Search Bar -->
-                    <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-50/50">
-                        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-                            <i data-lucide="list" class="w-5 h-5 text-amber-500"></i>
-                            Daftar Stok Gudang
-                        </h2>
-                        <div class="relative w-full sm:w-64">
-                            <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-3 text-slate-400"></i>
-                            <input type="text" id="search-input" placeholder="Cari nama / kategori..."
-                                class="w-full pl-10 pr-4 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white">
-                        </div>
-                    </div>
-
-                    <!-- Tabel Data -->
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm">
-                            <thead class="bg-slate-100/70 text-slate-600 uppercase text-xs font-semibold">
-                                <tr>
-                                    <th class="py-3.5 px-4">Kode/Nama</th>
-                                    <th class="py-3.5 px-4">Kategori</th>
-                                    <th class="py-3.5 px-4 text-center">Stok Saat Ini</th>
-                                    <th class="py-3.5 px-4 text-center">Kelola Stok</th>
-                                    <th class="py-3.5 px-4 text-center">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody id="inventory-table-body" class="divide-y divide-slate-100">
-                                <!-- Data akan diisi otomatis dari Firebase -->
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div id="empty-state" class="hidden p-12 text-center text-slate-400">
-                        <i data-lucide="inbox" class="w-12 h-12 mx-auto mb-3 opacity-50"></i>
-                        <p class="font-medium text-slate-500">Belum ada data barang di database.</p>
-                        <p class="text-xs mt-1">Gunakan form di samping untuk menambahkan barang pertama Anda.</p>
-                    </div>
-
-                </div>
+            <!-- Table Container -->
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-slate-600">
+                    <thead class="bg-slate-50 text-slate-700 uppercase font-semibold text-xs border-b border-slate-200">
+                        <tr>
+                            <th class="px-6 py-4">SKU / Kode</th>
+                            <th class="px-6 py-4">Nama Barang</th>
+                            <th class="px-6 py-4">Kategori</th>
+                            <th class="px-6 py-4 text-center">Jumlah Stok</th>
+                            <th class="px-6 py-4 text-center">Status</th>
+                            <th class="px-6 py-4 text-right">Keluar Barang</th>
+                            <th class="px-6 py-4 text-right">Pengaturan</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryTableBody" class="divide-y divide-slate-200"></tbody>
+                </table>
             </div>
 
+            <div id="emptyState" class="hidden p-12 text-center">
+                <i data-lucide="inbox" class="w-12 h-12 text-slate-300 mx-auto mb-3"></i>
+                <h4 class="text-slate-700 font-medium mb-1">Belum Ada Data Barang</h4>
+                <p class="text-slate-400 text-sm">Tambahkan barang baru atau upload CSV Google Sheets.</p>
+            </div>
+        </div>
+
+        <!-- Section 2: Log Catatan Barang Keluar -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="p-6 border-b border-slate-200 flex items-center justify-between">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-900">Riwayat Catatan Barang Keluar</h2>
+                    <p class="text-xs text-slate-500">Log pencatatan dan alasan barang keluar dari gudang</p>
+                </div>
+                <div class="p-2 bg-rose-50 text-rose-600 rounded-lg">
+                    <i data-lucide="history" class="w-5 h-5"></i>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-slate-600">
+                    <thead class="bg-slate-50 text-slate-700 uppercase font-semibold text-xs border-b border-slate-200">
+                        <tr>
+                            <th class="px-6 py-4">Tanggal & Waktu</th>
+                            <th class="px-6 py-4">SKU</th>
+                            <th class="px-6 py-4">Nama Barang</th>
+                            <th class="px-6 py-4 text-center">Jumlah Out</th>
+                            <th class="px-6 py-4">Keterangan / Alasan</th>
+                        </tr>
+                    </thead>
+                    <tbody id="outLogTableBody" class="divide-y divide-slate-200"></tbody>
+                </table>
+            </div>
+            <div id="emptyLogState" class="hidden p-8 text-center text-slate-400 text-sm">
+                Belum ada catatan transaksi barang keluar.
+            </div>
         </div>
     </main>
 
-    <!-- FIREBASE SDK (COMPAT MODULES) -->
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <!-- Modal Form Tambah Barang Baru -->
+    <div id="addModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6 relative">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-200 mb-4">
+                <h3 class="text-lg font-bold text-slate-900">Tambah Barang Baru</h3>
+                <button id="closeAddModalBtn" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form id="addItemForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Kode SKU</label>
+                    <input type="text" id="inputSKU" required placeholder="Contoh: BRG-001" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Nama Barang</label>
+                    <input type="text" id="inputName" required placeholder="Contoh: Kemeja Polos" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Kategori</label>
+                    <input type="text" id="inputCategory" required placeholder="Contoh: Pakaian" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Jumlah Stok Awal</label>
+                    <input type="number" id="inputStock" min="0" required placeholder="0" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
+                </div>
+                <div class="pt-4 flex justify-end space-x-3">
+                    <button type="button" id="cancelAddBtn" class="px-4 py-2 border border-slate-300 rounded-lg text-sm text-slate-600 hover:bg-slate-50 font-medium">Batal</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium">Simpan Data</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
-    <!-- SCRIPT APLIKASI -->
-    <script>
-        // -------------------------------------------------------------
-        // KONFIGURASI FIREBASE - Ganti dengan Kunci Firebase Milik Anda
-        // -------------------------------------------------------------
+    <!-- Modal Form Catatan Barang Keluar -->
+    <div id="outModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6 relative">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-200 mb-4">
+                <h3 class="text-lg font-bold text-slate-900">Catat Barang Keluar</h3>
+                <button id="closeOutModalBtn" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form id="itemOutForm" class="space-y-4">
+                <input type="hidden" id="outItemId">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Nama Barang</label>
+                    <input type="text" id="outItemName" readonly class="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-lg text-sm font-semibold text-slate-700 cursor-not-allowed">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Jumlah Keluar</label>
+                    <input type="number" id="outQuantity" min="1" required placeholder="1" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:outline-none text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Keterangan / Alasan</label>
+                    <textarea id="outReason" required rows="3" placeholder="Contoh: Terjual / Rusak / Kirim ke Cabang" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:outline-none text-sm"></textarea>
+                </div>
+                <div class="pt-4 flex justify-end space-x-3">
+                    <button type="button" id="cancelOutBtn" class="px-4 py-2 border border-slate-300 rounded-lg text-sm text-slate-600 hover:bg-slate-50 font-medium">Batal</button>
+                    <button type="submit" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-sm font-medium">Kurangi & Catat</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Firebase Realtime Database Integration Script -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, onValue, push, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        // Konfigurasi Firebase
         const firebaseConfig = {
-            apiKey:  "AIzaSyBCWvkJdfFAdrdpxnrtzSEBBzlOsw_-fXg",
-            authDomain: "warehous-27ece.firebaseapp.com",
-            databaseURL: "https://warehous-27ece-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "warehous-27ece",
-            storageBucket: "warehous-27ece.firebasestorage.app",
-            messagingSenderId: "45154175764",
-            appId: "1:45154175764:web:45e7ec8c1989b58bd09001"
+            databaseURL: "https://warehous-27ece-default-rtdb.firebaseio.com/"
         };
 
-        // Inisialisasi Firebase
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-        const inventoryRef = db.ref('inventory');
-        const txRef = db.ref('totalTransactions');
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const itemsRef = ref(db, 'inventory');
+        const logsRef = ref(db, 'out_logs');
 
-        // State Lokal
-        let inventoryData = {};
-        let totalTransactions = 0;
+        let itemsData = {};
+        let logsData = {};
 
-        function refreshIcons() {
-            lucide.createIcons();
-        }
+        lucide.createIcons();
 
-        // Format Jam
-        function updateClock() {
-            const now = new Date();
-            document.getElementById('current-time').innerText = now.toLocaleTimeString('id-ID');
-        }
-        setInterval(updateClock, 1000);
-        updateClock();
-
-        // -------------------------------------------------------------
-        // FIREBASE REALTIME LISTENERS (Sinkronisasi Antar Perangkat)
-        // -------------------------------------------------------------
-        
-        // Cek Status Koneksi
-        db.ref('.info/connected').on('value', (snap) => {
-            const syncEl = document.getElementById('sync-status');
+        // Status Koneksi Firebase Realtime
+        onValue(ref(db, ".info/connected"), (snap) => {
+            const statusEl = document.getElementById("connectionStatus");
             if (snap.val() === true) {
-                syncEl.className = "text-xs bg-emerald-950 px-3 py-1.5 rounded-lg border border-emerald-800 text-emerald-400 flex items-center gap-2";
-                syncEl.innerHTML = `<i data-lucide="cloud" class="w-4 h-4 text-emerald-400"></i><span>Cloud Online</span>`;
+                statusEl.className = "flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200";
+                statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span><span>Terkoneksi Realtime</span>`;
             } else {
-                syncEl.className = "text-xs bg-amber-950 px-3 py-1.5 rounded-lg border border-amber-800 text-amber-400 flex items-center gap-2";
-                syncEl.innerHTML = `<i data-lucide="cloud-off" class="w-4 h-4 text-amber-400"></i><span>Menghubungkan...</span>`;
+                statusEl.className = "flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200";
+                statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span><span>Menghubungkan...</span>`;
             }
-            refreshIcons();
         });
 
-        // Mendengarkan perubahan data stok dari Firebase
-        inventoryRef.on('value', (snapshot) => {
-            inventoryData = snapshot.val() || {};
+        // Realtime Listener Data Barang
+        onValue(itemsRef, (snapshot) => {
+            itemsData = snapshot.val() || {};
             renderTable();
             updateStats();
         });
 
-        // Mendengarkan total transaksi
-        txRef.on('value', (snapshot) => {
-            totalTransactions = snapshot.val() || 0;
-            document.getElementById('stat-transactions').innerText = totalTransactions;
+        // Realtime Listener Log Barang Keluar
+        onValue(logsRef, (snapshot) => {
+            logsData = snapshot.val() || {};
+            renderLogsTable();
+            updateStats();
         });
 
-        // Update Ringkasan Dashboard
-        function updateStats() {
-            const items = Object.values(inventoryData);
-            document.getElementById('stat-total-items').innerText = items.length;
+        // Render Tabel Data Utama
+        function renderTable() {
+            const tbody = document.getElementById("inventoryTableBody");
+            const emptyState = document.getElementById("emptyState");
+            const searchFilter = document.getElementById("searchInput").value.toLowerCase();
             
-            const totalQty = items.reduce((acc, item) => acc + (parseInt(item.qty) || 0), 0);
-            document.getElementById('stat-total-stock').innerText = totalQty.toLocaleString('id-ID');
+            tbody.innerHTML = "";
+            const keys = Object.keys(itemsData);
+            let visibleCount = 0;
 
-            const lowStockCount = items.filter(item => (parseInt(item.qty) || 0) <= 5).length;
-            document.getElementById('stat-low-stock').innerText = lowStockCount;
-        }
+            keys.forEach(key => {
+                const item = itemsData[key];
+                if (searchFilter && !(
+                    item.sku.toLowerCase().includes(searchFilter) ||
+                    item.name.toLowerCase().includes(searchFilter) ||
+                    item.category.toLowerCase().includes(searchFilter)
+                )) return;
 
-        // Render Tabel
-        function renderTable(filterText = '') {
-            const tbody = document.getElementById('inventory-table-body');
-            const emptyState = document.getElementById('empty-state');
-            tbody.innerHTML = '';
+                visibleCount++;
+                const isLow = item.stock < 5;
 
-            const items = Object.entries(inventoryData).map(([key, value]) => ({ key, ...value }));
-
-            const filtered = items.filter(item => 
-                (item.name || '').toLowerCase().includes(filterText.toLowerCase()) ||
-                (item.category || '').toLowerCase().includes(filterText.toLowerCase()) ||
-                (item.code || '').toLowerCase().includes(filterText.toLowerCase())
-            );
-
-            if (filtered.length === 0) {
-                emptyState.classList.remove('hidden');
-            } else {
-                emptyState.classList.add('hidden');
-                filtered.forEach(item => {
-                    const isLow = item.qty <= 5;
-                    const row = document.createElement('tr');
-                    row.className = "hover:bg-slate-50 transition-colors";
-                    row.innerHTML = `
-                        <td class="py-3.5 px-4">
-                            <div class="font-bold text-slate-800">${item.name}</div>
-                            <div class="text-xs text-slate-400 font-mono">${item.code}</div>
-                        </td>
-                        <td class="py-3.5 px-4">
-                            <span class="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
-                                ${item.category}
-                            </span>
-                        </td>
-                        <td class="py-3.5 px-4 text-center">
-                            <span class="font-bold text-base ${isLow ? 'text-red-600' : 'text-slate-700'}">
-                                ${item.qty.toLocaleString('id-ID')}
-                            </span> 
-                            <span class="text-xs text-slate-500 font-medium">${item.unit}</span>
-                            ${isLow ? '<div class="text-[10px] text-red-500 font-bold mt-0.5">Stok Menipis</div>' : ''}
-                        </td>
-                        <td class="py-3.5 px-4 text-center">
-                            <div class="flex items-center justify-center gap-1.5">
-                                <button onclick="adjustStock('${item.key}', -1)" title="Barang Keluar (-1)"
-                                    class="bg-red-50 hover:bg-red-100 text-red-600 p-1.5 rounded-lg transition-colors border border-red-200">
-                                    <i data-lucide="minus" class="w-4 h-4"></i>
-                                </button>
-                                <button onclick="adjustStock('${item.key}', 1)" title="Barang Masuk (+1)"
-                                    class="bg-emerald-50 hover:bg-emerald-100 text-emerald-600 p-1.5 rounded-lg transition-colors border border-emerald-200">
-                                    <i data-lucide="plus" class="w-4 h-4"></i>
-                                </button>
-                            </div>
-                        </td>
-                        <td class="py-3.5 px-4 text-center">
-                            <button onclick="deleteItem('${item.key}')" title="Hapus Barang"
-                                class="text-slate-400 hover:text-red-600 p-1.5 rounded-lg transition-colors">
-                                <i data-lucide="trash-2" class="w-4 h-4"></i>
-                            </button>
-                        </td>
-                    `;
-                    tbody.appendChild(row);
-                });
-            }
-            refreshIcons();
-        }
-
-        // -------------------------------------------------------------
-        // AKSI (Kirim Data ke Database Firebase)
-        // -------------------------------------------------------------
-
-        // Tambah Barang Baru
-        document.getElementById('add-item-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const code = document.getElementById('item-code').value.trim();
-            const name = document.getElementById('item-name').value.trim();
-            const category = document.getElementById('item-category').value.trim();
-            const qty = parseInt(document.getElementById('item-qty').value) || 0;
-            const unit = document.getElementById('item-unit').value;
-
-            // Push data baru ke Firebase Database
-            inventoryRef.push({
-                code,
-                name,
-                category,
-                qty,
-                unit,
-                createdAt: firebase.database.ServerValue.TIMESTAMP
+                const tr = document.createElement("tr");
+                tr.className = "hover:bg-slate-50 transition-colors";
+                tr.innerHTML = `
+                    <td class="px-6 py-4 font-mono font-medium text-slate-800">${escapeHtml(item.sku)}</td>
+                    <td class="px-6 py-4 font-semibold text-slate-900">${escapeHtml(item.name)}</td>
+                    <td class="px-6 py-4"><span class="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-md text-xs font-medium">${escapeHtml(item.category)}</span></td>
+                    <td class="px-6 py-4 text-center font-bold ${isLow ? 'text-amber-600' : 'text-slate-800'} text-base">${item.stock}</td>
+                    <td class="px-6 py-4 text-center">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${isLow ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">
+                            ${isLow ? 'Stok Menipis' : 'Aman'}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <button data-id="${key}" data-action="open-out" class="inline-flex items-center space-x-1 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-lg text-xs font-medium transition-colors">
+                            <i data-lucide="minus-circle" class="w-3.5 h-3.5"></i>
+                            <span>Catat Out</span>
+                        </button>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <button data-id="${key}" data-action="delete" class="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
             });
 
-            this.reset();
-        });
+            if (visibleCount === 0) emptyState.classList.remove("hidden");
+            else emptyState.classList.add("hidden");
 
-        // Penyesuaian Stok (Keluar / Masuk)
-        function adjustStock(key, amount) {
-            const item = inventoryData[key];
-            if (item) {
-                const newQty = (item.qty || 0) + amount;
-                if (newQty < 0) {
-                    alert("Stok tidak boleh kurang dari 0!");
-                    return;
+            lucide.createIcons();
+        }
+
+        // Render Tabel Log Barang Keluar
+        function renderLogsTable() {
+            const tbody = document.getElementById("outLogTableBody");
+            const emptyLogState = document.getElementById("emptyLogState");
+            tbody.innerHTML = "";
+
+            const logKeys = Object.keys(logsData).reverse(); // Urutan transaksi terbaru di paling atas
+
+            if (logKeys.length === 0) {
+                emptyLogState.classList.remove("hidden");
+                return;
+            }
+            emptyLogState.classList.add("hidden");
+
+            logKeys.forEach(key => {
+                const log = logsData[key];
+                const dateStr = new Date(log.timestamp).toLocaleString("id-ID");
+                const tr = document.createElement("tr");
+                tr.className = "hover:bg-slate-50 transition-colors";
+                tr.innerHTML = `
+                    <td class="px-6 py-3.5 text-xs text-slate-500">${dateStr}</td>
+                    <td class="px-6 py-3.5 font-mono text-xs font-medium text-slate-700">${escapeHtml(log.sku)}</td>
+                    <td class="px-6 py-3.5 font-semibold text-slate-800">${escapeHtml(log.name)}</td>
+                    <td class="px-6 py-3.5 text-center font-bold text-rose-600">-${log.qty}</td>
+                    <td class="px-6 py-3.5 text-slate-600">${escapeHtml(log.reason)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Dashboard Stats Update
+        function updateStats() {
+            const itemKeys = Object.keys(itemsData);
+            const logKeys = Object.keys(logsData);
+            
+            let lowStockCount = 0;
+            itemKeys.forEach(k => { if (itemsData[k].stock < 5) lowStockCount++; });
+
+            let totalOutQty = 0;
+            logKeys.forEach(k => { totalOutQty += (logsData[k].qty || 0); });
+
+            document.getElementById("statTotalItems").textContent = itemKeys.length;
+            document.getElementById("statLowStock").textContent = lowStockCount;
+            document.getElementById("statTotalOutQty").textContent = totalOutQty;
+            document.getElementById("statTotalTransactions").textContent = logKeys.length;
+        }
+
+        // Handle Event Klik Tabel Utama
+        document.getElementById("inventoryTableBody").addEventListener("click", (e) => {
+            const button = e.target.closest("button");
+            if (!button) return;
+
+            const id = button.dataset.id;
+            const action = button.dataset.action;
+
+            if (action === "open-out") {
+                const item = itemsData[id];
+                document.getElementById("outItemId").value = id;
+                document.getElementById("outItemName").value = `${item.name} (Stok saat ini: ${item.stock})`;
+                document.getElementById("outQuantity").max = item.stock;
+                document.getElementById("outModal").classList.remove("hidden");
+            } else if (action === "delete") {
+                if (confirm("Yakin ingin menghapus barang ini dari database?")) {
+                    remove(ref(db, `inventory/${id}`));
                 }
-                
-                // Update Stok di Firebase
-                inventoryRef.child(key).update({ qty: newQty });
-                // Increment Total Transaksi
-                txRef.set(totalTransactions + 1);
             }
-        }
-
-        // Hapus Barang dari Cloud
-        function deleteItem(key) {
-            if (confirm("Apakah Anda yakin ingin menghapus barang ini dari database gudang?")) {
-                inventoryRef.child(key).remove();
-            }
-        }
-
-        // Search Listener
-        document.getElementById('search-input').addEventListener('input', function(e) {
-            renderTable(e.target.value);
         });
 
-        refreshIcons();
+        // Submit Form Barang Keluar
+        document.getElementById("itemOutForm").addEventListener("submit", (e) => {
+            e.preventDefault();
+            const id = document.getElementById("outItemId").value;
+            const item = itemsData[id];
+            const qtyOut = parseInt(document.getElementById("outQuantity").value, 10);
+            const reason = document.getElementById("outReason").value.trim();
+
+            if (!item || qtyOut > item.stock) {
+                alert("Jumlah barang keluar tidak boleh melebihi stok yang ada!");
+                return;
+            }
+
+            // 1. Kurangi stok di node inventory
+            const newStock = item.stock - qtyOut;
+            update(ref(db, `inventory/${id}`), { stock: newStock });
+
+            // 2. Simpan catatan ke node out_logs
+            const logEntry = {
+                itemId: id,
+                sku: item.sku,
+                name: item.name,
+                qty: qtyOut,
+                reason: reason,
+                timestamp: Date.now()
+            };
+            push(logsRef, logEntry);
+
+            // Close Modal & Reset Form
+            document.getElementById("outModal").classList.add("hidden");
+            document.getElementById("itemOutForm").reset();
+        });
+
+        // Modal Controls Barang Out
+        document.getElementById("closeOutModalBtn").addEventListener("click", () => document.getElementById("outModal").classList.add("hidden"));
+        document.getElementById("cancelOutBtn").addEventListener("click", () => document.getElementById("outModal").classList.add("hidden"));
+
+        // Modal Controls Tambah Baru
+        const addModal = document.getElementById("addModal");
+        document.getElementById("openAddModalBtn").addEventListener("click", () => addModal.classList.remove("hidden"));
+        document.getElementById("closeAddModalBtn").addEventListener("click", () => addModal.classList.add("hidden"));
+        document.getElementById("cancelAddBtn").addEventListener("click", () => addModal.classList.add("hidden"));
+
+        // Form Submit Tambah Barang Baru
+        document.getElementById("addItemForm").addEventListener("submit", (e) => {
+            e.preventDefault();
+            const newItem = {
+                sku: document.getElementById("inputSKU").value.trim(),
+                name: document.getElementById("inputName").value.trim(),
+                category: document.getElementById("inputCategory").value.trim(),
+                stock: parseInt(document.getElementById("inputStock").value, 10) || 0,
+                updatedAt: Date.now()
+            };
+            push(itemsRef, newItem).then(() => {
+                addModal.classList.add("hidden");
+                document.getElementById("addItemForm").reset();
+            });
+        });
+
+        // Fitur Import CSV dari Google Sheets
+        document.getElementById("csvFileInput").addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            Papa.parse(file, {
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    let count = 0;
+                    results.data.forEach(row => {
+                        const sku = row.SKU || row.sku || row.Kode;
+                        const name = row.Nama || row.name || row["Nama Barang"];
+                        const category = row.Kategori || row.category || "Umum";
+                        const stock = parseInt(row.Stok || row.stock || row.Jumlah, 10) || 0;
+
+                        if (sku && name) {
+                            push(itemsRef, {
+                                sku: sku.toString().trim(),
+                                name: name.toString().trim(),
+                                category: category.toString().trim(),
+                                stock: stock,
+                                updatedAt: Date.now()
+                            });
+                            count++;
+                        }
+                    });
+                    alert(`Berhasil mengimpor ${count} data barang ke Firebase!`);
+                    document.getElementById("csvFileInput").value = "";
+                }
+            });
+        });
+
+        document.getElementById("searchInput").addEventListener("input", renderTable);
+
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
     </script>
 </body>
 </html>
