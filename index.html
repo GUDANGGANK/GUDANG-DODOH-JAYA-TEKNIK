@@ -3,24 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Manajemen Stok & Barang Keluar</title>
+    <title>GUDANG DODOH JAYA TEKNIK</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- Library PapaParse untuk Import CSV Google Sheets -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased min-h-screen">
-    <!-- Header / Navigasi -->
+    <!-- Header Navbar -->
     <nav class="bg-white border-b border-slate-200 sticky top-0 z-30">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
                 <div class="flex items-center space-x-3">
                     <div class="p-2 bg-indigo-600 text-white rounded-lg">
-                        <i data-lucide="box" class="w-6 h-6"></i>
+                        <i data-lucide="wrench" class="w-6 h-6"></i>
                     </div>
                     <div>
-                        <h1 class="text-lg font-bold text-slate-900 leading-tight">StockMaster Realtime</h1>
-                        <p class="text-xs text-slate-500">Manajemen Stok & Barang Keluar</p>
+                        <h1 class="text-lg font-bold text-slate-900 leading-tight">GUDANG DODOH JAYA TEKNIK</h1>
+                        <p class="text-xs text-slate-500">Sistem Stok & Catatan Barang Keluar</p>
                     </div>
                 </div>
                 <div class="flex items-center space-x-4">
@@ -75,7 +75,7 @@
             </div>
         </div>
 
-        <!-- Section 1: Tabel Data Stok Utama -->
+        <!-- Section 1: Tabel Stok Barang -->
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <div class="p-6 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div class="relative flex-1 max-w-md">
@@ -106,7 +106,7 @@
                             <th class="px-6 py-4 text-center">Jumlah Stok</th>
                             <th class="px-6 py-4 text-center">Status</th>
                             <th class="px-6 py-4 text-right">Keluar Barang</th>
-                            <th class="px-6 py-4 text-right">Pengaturan</th>
+                            <th class="px-6 py-4 text-right">Aksi</th>
                         </tr>
                     </thead>
                     <tbody id="inventoryTableBody" class="divide-y divide-slate-200"></tbody>
@@ -116,7 +116,7 @@
             <div id="emptyState" class="hidden p-12 text-center">
                 <i data-lucide="inbox" class="w-12 h-12 text-slate-300 mx-auto mb-3"></i>
                 <h4 class="text-slate-700 font-medium mb-1">Belum Ada Data Barang</h4>
-                <p class="text-slate-400 text-sm">Tambahkan barang baru atau upload CSV Google Sheets.</p>
+                <p class="text-slate-400 text-sm">Tambahkan barang baru atau upload file CSV.</p>
             </div>
         </div>
 
@@ -124,8 +124,8 @@
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <div class="p-6 border-b border-slate-200 flex items-center justify-between">
                 <div>
-                    <h2 class="text-lg font-bold text-slate-900">Riwayat Catatan Barang Keluar</h2>
-                    <p class="text-xs text-slate-500">Log pencatatan dan alasan barang keluar dari gudang</p>
+                    <h2 class="text-lg font-bold text-slate-900">Riwayat Barang Keluar</h2>
+                    <p class="text-xs text-slate-500">Catatan pengeluaran barang & alasannya</p>
                 </div>
                 <div class="p-2 bg-rose-50 text-rose-600 rounded-lg">
                     <i data-lucide="history" class="w-5 h-5"></i>
@@ -135,7 +135,7 @@
                 <table class="w-full text-left text-sm text-slate-600">
                     <thead class="bg-slate-50 text-slate-700 uppercase font-semibold text-xs border-b border-slate-200">
                         <tr>
-                            <th class="px-6 py-4">Tanggal & Waktu</th>
+                            <th class="px-6 py-4">Waktu & Tanggal</th>
                             <th class="px-6 py-4">SKU</th>
                             <th class="px-6 py-4">Nama Barang</th>
                             <th class="px-6 py-4 text-center">Jumlah Out</th>
@@ -161,15 +161,15 @@
             <form id="addItemForm" class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">Kode SKU</label>
-                    <input type="text" id="inputSKU" required placeholder="Contoh: BRG-001" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
+                    <input type="text" id="inputSKU" required placeholder="Contoh: TKN-001" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">Nama Barang</label>
-                    <input type="text" id="inputName" required placeholder="Contoh: Kemeja Polos" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
+                    <input type="text" id="inputName" required placeholder="Contoh: Pompa Air 12V" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">Kategori</label>
-                    <input type="text" id="inputCategory" required placeholder="Contoh: Pakaian" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
+                    <input type="text" id="inputCategory" required placeholder="Contoh: Sparepart" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">Jumlah Stok Awal</label>
@@ -202,7 +202,7 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">Keterangan / Alasan</label>
-                    <textarea id="outReason" required rows="3" placeholder="Contoh: Terjual / Rusak / Kirim ke Cabang" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:outline-none text-sm"></textarea>
+                    <textarea id="outReason" required rows="3" placeholder="Contoh: Terjual / Dipakai Servis / Kirim ke Pembeli" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:outline-none text-sm"></textarea>
                 </div>
                 <div class="pt-4 flex justify-end space-x-3">
                     <button type="button" id="cancelOutBtn" class="px-4 py-2 border border-slate-300 rounded-lg text-sm text-slate-600 hover:bg-slate-50 font-medium">Batal</button>
@@ -217,7 +217,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, onValue, push, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // Konfigurasi Firebase
         const firebaseConfig = {
             databaseURL: "https://warehous-27ece-default-rtdb.firebaseio.com/"
         };
@@ -232,7 +231,7 @@
 
         lucide.createIcons();
 
-        // Status Koneksi Firebase Realtime
+        // Status Koneksi
         onValue(ref(db, ".info/connected"), (snap) => {
             const statusEl = document.getElementById("connectionStatus");
             if (snap.val() === true) {
@@ -244,21 +243,20 @@
             }
         });
 
-        // Realtime Listener Data Barang
+        // Listener Data Utama
         onValue(itemsRef, (snapshot) => {
             itemsData = snapshot.val() || {};
             renderTable();
             updateStats();
         });
 
-        // Realtime Listener Log Barang Keluar
+        // Listener Log Barang Keluar
         onValue(logsRef, (snapshot) => {
             logsData = snapshot.val() || {};
             renderLogsTable();
             updateStats();
         });
 
-        // Render Tabel Data Utama
         function renderTable() {
             const tbody = document.getElementById("inventoryTableBody");
             const emptyState = document.getElementById("emptyState");
@@ -312,13 +310,12 @@
             lucide.createIcons();
         }
 
-        // Render Tabel Log Barang Keluar
         function renderLogsTable() {
             const tbody = document.getElementById("outLogTableBody");
             const emptyLogState = document.getElementById("emptyLogState");
             tbody.innerHTML = "";
 
-            const logKeys = Object.keys(logsData).reverse(); // Urutan transaksi terbaru di paling atas
+            const logKeys = Object.keys(logsData).reverse();
 
             if (logKeys.length === 0) {
                 emptyLogState.classList.remove("hidden");
@@ -342,7 +339,6 @@
             });
         }
 
-        // Dashboard Stats Update
         function updateStats() {
             const itemKeys = Object.keys(itemsData);
             const logKeys = Object.keys(logsData);
@@ -359,7 +355,6 @@
             document.getElementById("statTotalTransactions").textContent = logKeys.length;
         }
 
-        // Handle Event Klik Tabel Utama
         document.getElementById("inventoryTableBody").addEventListener("click", (e) => {
             const button = e.target.closest("button");
             if (!button) return;
@@ -370,17 +365,16 @@
             if (action === "open-out") {
                 const item = itemsData[id];
                 document.getElementById("outItemId").value = id;
-                document.getElementById("outItemName").value = `${item.name} (Stok saat ini: ${item.stock})`;
+                document.getElementById("outItemName").value = `${item.name} (Stok: ${item.stock})`;
                 document.getElementById("outQuantity").max = item.stock;
                 document.getElementById("outModal").classList.remove("hidden");
             } else if (action === "delete") {
-                if (confirm("Yakin ingin menghapus barang ini dari database?")) {
+                if (confirm("Yakin ingin menghapus barang ini?")) {
                     remove(ref(db, `inventory/${id}`));
                 }
             }
         });
 
-        // Submit Form Barang Keluar
         document.getElementById("itemOutForm").addEventListener("submit", (e) => {
             e.preventDefault();
             const id = document.getElementById("outItemId").value;
@@ -389,41 +383,34 @@
             const reason = document.getElementById("outReason").value.trim();
 
             if (!item || qtyOut > item.stock) {
-                alert("Jumlah barang keluar tidak boleh melebihi stok yang ada!");
+                alert("Jumlah keluar tidak boleh melebihi stok yang ada!");
                 return;
             }
 
-            // 1. Kurangi stok di node inventory
             const newStock = item.stock - qtyOut;
             update(ref(db, `inventory/${id}`), { stock: newStock });
 
-            // 2. Simpan catatan ke node out_logs
-            const logEntry = {
+            push(logsRef, {
                 itemId: id,
                 sku: item.sku,
                 name: item.name,
                 qty: qtyOut,
                 reason: reason,
                 timestamp: Date.now()
-            };
-            push(logsRef, logEntry);
+            });
 
-            // Close Modal & Reset Form
             document.getElementById("outModal").classList.add("hidden");
             document.getElementById("itemOutForm").reset();
         });
 
-        // Modal Controls Barang Out
         document.getElementById("closeOutModalBtn").addEventListener("click", () => document.getElementById("outModal").classList.add("hidden"));
         document.getElementById("cancelOutBtn").addEventListener("click", () => document.getElementById("outModal").classList.add("hidden"));
 
-        // Modal Controls Tambah Baru
         const addModal = document.getElementById("addModal");
         document.getElementById("openAddModalBtn").addEventListener("click", () => addModal.classList.remove("hidden"));
         document.getElementById("closeAddModalBtn").addEventListener("click", () => addModal.classList.add("hidden"));
         document.getElementById("cancelAddBtn").addEventListener("click", () => addModal.classList.add("hidden"));
 
-        // Form Submit Tambah Barang Baru
         document.getElementById("addItemForm").addEventListener("submit", (e) => {
             e.preventDefault();
             const newItem = {
@@ -439,7 +426,6 @@
             });
         });
 
-        // Fitur Import CSV dari Google Sheets
         document.getElementById("csvFileInput").addEventListener("change", (e) => {
             const file = e.target.files[0];
             if (!file) return;
@@ -466,7 +452,7 @@
                             count++;
                         }
                     });
-                    alert(`Berhasil mengimpor ${count} data barang ke Firebase!`);
+                    alert(`Berhasil mengimpor ${count} data barang!`);
                     document.getElementById("csvFileInput").value = "";
                 }
             });
