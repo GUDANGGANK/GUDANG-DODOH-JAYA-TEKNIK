@@ -23,9 +23,9 @@
                     </div>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <div id="connectionStatus" class="flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                        <span>Sistem Siap (Lokal)</span>
+                    <div id="connectionStatus" class="flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                        <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                        <span>Menghubungkan...</span>
                     </div>
                 </div>
             </div>
@@ -233,23 +233,56 @@
         </div>
     </div>
 
-    <!-- LOGIKA LOCALSTORAGE TERINTEGRASI SATUAN -->
-    <script>
-        let itemsData = JSON.parse(localStorage.getItem("gudang_items")) || {};
-        let logsData = JSON.parse(localStorage.getItem("gudang_logs")) || {};
+    <!-- LOGIKA FIREBASE REALTIME DATABASE -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, onValue, push, set, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        // Konfigurasi Firebase (Ganti apiKey jika Anda menggunakan API Key milik Anda sendiri)
+        const firebaseConfig = {
+            apiKey: "AIzaSyD-PlaceholderApiKeyForRealtimeDB",
+            authDomain: "warehous-27ece.firebaseapp.com",
+            databaseURL: "https://warehous-27ece-default-rtdb.firebaseio.com/",
+            projectId: "warehous-27ece",
+            storageBucket: "warehous-27ece.appspot.com"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        let itemsData = {};
+        let logsData = {};
 
         lucide.createIcons();
-        renderTable();
-        renderLogsTable();
-        updateStats();
 
-        function saveData() {
-            localStorage.setItem("gudang_items", JSON.stringify(itemsData));
-            localStorage.setItem("gudang_logs", JSON.stringify(logsData));
+        // Monitor Status Koneksi Firebase Realtime
+        const connectedRef = ref(db, ".info/connected");
+        onValue(connectedRef, (snap) => {
+            const statusEl = document.getElementById("connectionStatus");
+            if (snap.val() === true) {
+                statusEl.className = "flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200";
+                statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span><span>Terkoneksi Realtime</span>`;
+            } else {
+                statusEl.className = "flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200";
+                statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span><span>Menghubungkan...</span>`;
+            }
+        });
+
+        // Sync Data Items Realtime
+        const itemsRef = ref(db, "items");
+        onValue(itemsRef, (snapshot) => {
+            itemsData = snapshot.val() || {};
             renderTable();
+            updateStats();
+        });
+
+        // Sync Data Logs Realtime
+        const logsRef = ref(db, "logs");
+        onValue(logsRef, (snapshot) => {
+            logsData = snapshot.val() || {};
             renderLogsTable();
             updateStats();
-        }
+        });
 
         function renderTable() {
             const tbody = document.getElementById("inventoryTableBody");
@@ -369,8 +402,7 @@
                 document.getElementById("outModal").classList.remove("hidden");
             } else if (action === "delete") {
                 if (confirm("Yakin ingin menghapus barang ini?")) {
-                    delete itemsData[id];
-                    saveData();
+                    remove(ref(db, `items/${id}`));
                 }
             }
         });
@@ -387,10 +419,11 @@
                 return;
             }
 
-            itemsData[id].stock -= qtyOut;
-            
-            const logId = "log_" + Date.now();
-            logsData[logId] = {
+            const newStock = item.stock - qtyOut;
+            update(ref(db, `items/${id}`), { stock: newStock });
+
+            const newLogRef = push(ref(db, "logs"));
+            set(newLogRef, {
                 itemId: id,
                 sku: item.sku,
                 name: item.name,
@@ -398,9 +431,8 @@
                 unit: item.unit || "PCS",
                 reason: reason,
                 timestamp: Date.now()
-            };
+            });
 
-            saveData();
             document.getElementById("outModal").classList.add("hidden");
             document.getElementById("itemOutForm").reset();
         });
@@ -415,16 +447,16 @@
 
         document.getElementById("addItemForm").addEventListener("submit", (e) => {
             e.preventDefault();
-            const id = "item_" + Date.now();
-            itemsData[id] = {
+            const newItemRef = push(ref(db, "items"));
+            set(newItemRef, {
                 sku: document.getElementById("inputSKU").value.trim(),
                 name: document.getElementById("inputName").value.trim(),
                 category: document.getElementById("inputCategory").value.trim(),
                 stock: parseInt(document.getElementById("inputStock").value, 10) || 0,
                 unit: document.getElementById("inputUnit").value,
                 updatedAt: Date.now()
-            };
-            saveData();
+            });
+
             addModal.classList.add("hidden");
             document.getElementById("addItemForm").reset();
         });
@@ -446,20 +478,19 @@
                         const unit = (row.Satuan || row.satuan || row.Unit || "PCS").toString().toUpperCase().trim();
 
                         if (sku && name) {
-                            const id = "item_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4);
-                            itemsData[id] = {
+                            const newItemRef = push(ref(db, "items"));
+                            set(newItemRef, {
                                 sku: sku.toString().trim(),
                                 name: name.toString().trim(),
                                 category: category.toString().trim(),
                                 stock: stock,
                                 unit: unit,
                                 updatedAt: Date.now()
-                            };
+                            });
                             count++;
                         }
                     });
-                    saveData();
-                    alert(`Berhasil mengimpor ${count} data barang!`);
+                    alert(`Berhasil mengimpor ${count} data barang ke Firebase!`);
                     document.getElementById("csvFileInput").value = "";
                 }
             });
